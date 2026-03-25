@@ -1,109 +1,9 @@
-# 简历分类规则 Skills 包
+# 简历职能分类规则 Skills 包
 
-> **一套可复用的中文简历职能分类规则**，适用于招聘工具开发、简历管理系统、AI 简历解析后处理流程。
+[![Version](https://img.shields.io/badge/version-3.0.0-blue)](https://github.com/Liman-fully/resume-classification-rules)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-green.svg)](rules/classification_rules.json)
-
----
-
-## 这是什么
-
-这是从 [resume-dedup](https://github.com/Liman-fully/resume-dedup) 项目中提取的核心分类规则，**单独打包为独立 Skills 包**，方便：
-
-- 🔌 直接集成到任何简历处理工具
-- 🤖 作为 AI Agent 的知识库或工具函数
-- 🧩 社区开发者贡献和扩展规则
-- 📚 学习如何设计可维护的规则引擎
-
----
-
-## 快速上手
-
-### 方式一：Python（推荐）
-
-```bash
-git clone https://github.com/Liman-fully/resume-classification-rules.git
-cd resume-classification-rules
-python examples/basic_usage.py
-```
-
-```python
-from python.resume_classifier import ResumeClassifier
-
-clf = ResumeClassifier()
-result = clf.classify("产品经理-张三-本科-5年-北京.pdf")
-
-print(result.category)       # "01_产品经理"
-print(result.category_name)  # "产品经理"
-print(result.matched_keyword)# "产品经理"
-print(result.tags)           # [] (无叠加标签)
-```
-
-### 方式二：命令行
-
-```bash
-# 单文件
-python python/resume_classifier.py "算法工程师-PhD-NLP.pdf"
-
-# 批量
-python python/resume_classifier.py *.pdf
-
-# JSON 输出
-python python/resume_classifier.py --json "产品经理-MIT-海归.pdf"
-```
-
-### 方式三：直接使用 JSON 规则
-
-规则文件位于 `rules/classification_rules.json`，可被任何语言读取：
-
-```javascript
-// JavaScript / Node.js
-const rules = require('./rules/classification_rules.json');
-
-function classify(filename) {
-  const name = filename.toLowerCase();
-  for (const cat of rules.categories) {
-    for (const kw of cat.keywords) {
-      if (name.includes(kw.toLowerCase())) {
-        return { category: cat.id, name: cat.name, keyword: kw };
-      }
-    }
-  }
-  return { category: rules.config.fallback_category };
-}
-```
-
----
-
-## 规则体系
-
-### 两层架构
-
-```
-第一层 — 叠加标签（可同时命中多个，不互斥）
-  ★留学生/海归 (TAG_OVERSEA)  → 海外院校/海归关键词
-  ★博士/博士后 (TAG_PHD)      → PhD / 博士后等
-  ★高级管理    (TAG_EXEC)     → CEO/CTO/VP 等 C 级
-
-第二层 — 主分类（互斥，命中即停）
-  01 产品经理    02 技术研发    03 AI与算法    04 硬件与电子
-  05 数据分析    06 设计创意    07 运营        08 新媒体与内容
-  09 市场与品牌  10 销售与BD    11 客户服务    12 人事HR
-  13 项目管理    14 行政        15 财务        16 法务合规
-  17 采购与供应链 18 培训教育   19 金融        20 医疗健康
-  21 其他职能    99 待人工归类（兜底）
-```
-
-### 分类效果示例
-
-| 文件名 | 主分类 | 叠加标签 |
-|--------|--------|---------|
-| `产品经理-张三-本科-北京.pdf` | 01_产品经理 | — |
-| `算法工程师-PhD-NLP.pdf` | 03_AI与算法 | ★博士/博士后 |
-| `CFO-Harvard-海归.pdf` | 15_财务 | ★留学生/海归 + ★高级管理 |
-| `前端开发-Vue-React-3年.pdf` | 02_技术研发 | — |
-| `候选人简历_未知.pdf` | 99_待人工归类 | — |
+**可复用的中文简历三级分类体系** —— 行业 × 职能 × 岗位
 
 ---
 
@@ -112,63 +12,145 @@ function classify(filename) {
 ```
 resume-classification-rules/
 ├── rules/
-│   ├── classification_rules.json         # 规则主文件（核心）
-│   └── classification_rules.schema.json  # JSON Schema（编辑器提示）
+│   ├── classification_rules.json         # ⭐ 核心规则（三级分类）
+│   └── classification_rules.schema.json  # JSON Schema（编辑器智能提示）
 ├── python/
 │   ├── resume_classifier.py              # Python 分类器实现
-│   └── tests/
-│       └── test_classifier.py            # 单元测试
-├── examples/
-│   └── basic_usage.py                    # 快速上手示例
-├── docs/
-│   └── RULES_GUIDE.md                    # 完整规则说明文档
+│   └── tests/test_classifier.py          # 单元测试
+├── examples/basic_usage.py               # 快速上手示例
+├── docs/RULES_GUIDE.md                   # 完整规则说明文档
 └── README.md
 ```
 
 ---
 
-## 规则说明
+## 三级分类体系
 
-详细的规则设计理念、分类边界说明、扩展方法和常见问题，请阅读：
+| 层级 | 数量 | 说明 | 编码 |
+|-----|------|------|------|
+| **一级（行业）** | 15个 | AI/互联网、金融、医疗、汽车等 | H01-H15 |
+| **二级（职能）** | 22个 | 技术、产品、运营、销售等 | F01-F22 |
+| **三级（岗位）** | 1100+ | 具体职位名称 | 内嵌在职能中 |
 
-📖 [**docs/RULES_GUIDE.md**](docs/RULES_GUIDE.md)
+### 15个一级行业
+
+| 编码 | 行业名称 | 子行业数 |
+|-----|---------|---------|
+| H01 | AI/互联网/IT | 19 |
+| H02 | 电子/通信/半导体 | 4 |
+| H03 | 房地产/建筑 | 8 |
+| H04 | 金融 | 9 |
+| H05 | 消费品 | 11 |
+| H06 | 医疗健康 | 10 |
+| H07 | 汽车 | 8 |
+| H08 | 机械/制造 | 9 |
+| H09 | 教育培训/科研 | 7 |
+| H10 | 专业服务 | 6 |
+| H11 | 广告/传媒/文化/体育 | 7 |
+| H12 | 生活服务 | 8 |
+| H13 | 交通/物流/贸易/零售 | 8 |
+| H14 | 能源/化工/环保 | 7 |
+| H15 | 政府/非营利/其他 | 5 |
+
+### 22个二级职能
+
+| 编码 | 职能名称 |
+|-----|---------|
+| F01 | IT互联网技术 |
+| F02 | 电子/通信/半导体 |
+| F03 | 销售/客服 |
+| F04 | 运营 |
+| F05 | 人力/行政/财务/法务 |
+| F06 | 高级管理 |
+| F07 | 市场/公关/广告/会展 |
+| F08 | 生产/制造/研发 |
+| F09 | 制药/医疗器械/医疗护理 |
+| F10 | 汽车 |
+| F11 | 房地产/建筑/物业 |
+| F12 | 金融 |
+| F13 | 产品 |
+| F14 | 设计 |
+| F15 | 教育/培训 |
+| F16 | 供应链/物流/采购/贸易 |
+| F17 | 生活服务/零售 |
+| F18 | 影视/媒体 |
+| F19 | 咨询/翻译 |
+| F20 | 能源/环保/农业 |
+| F21 | 项目管理 |
+| F22 | 公务员/其他 |
 
 ---
 
-## 运行测试
+## 快速开始
+
+### 1. 克隆仓库
 
 ```bash
+git clone https://github.com/Liman-fully/resume-classification-rules.git
 cd resume-classification-rules
-pytest python/tests/ -v
+```
+
+### 2. 运行示例
+
+```bash
+cd python
+python resume_classifier.py --stats      # 查看规则统计
+python resume_classifier.py --list       # 列出所有分类
+python resume_classifier.py --text "Java开发工程师"  # 单条分类
+```
+
+### 3. Python API 使用
+
+```python
+from resume_classifier import ResumeClassifier
+
+# 初始化
+classifier = ResumeClassifier()
+
+# 单条分类
+result = classifier.classify("5年Java后端开发经验，熟悉Spring Boot")
+print(result['primary']['name'])   # IT互联网技术
+print(result['industry']['name'])  # AI/互联网/IT
+
+# 批量分类
+texts = ["Java开发", "产品经理", "销售经理"]
+results = classifier.batch_classify(texts)
 ```
 
 ---
 
-## 贡献规则
+## 数据来源
 
-有新的职位词需要覆盖？欢迎提 PR！
-
-1. 编辑 `rules/classification_rules.json`，在对应分类的 `keywords` 中追加
-2. 在 `python/tests/test_classifier.py` 添加测试用例
-3. `pytest` 全绿后提交 PR
-
-详细流程见 [docs/RULES_GUIDE.md#贡献指南](docs/RULES_GUIDE.md#10-贡献指南)。
+- **猎聘** (liepin) - 2026-03-16 实时抓取
+- **BOSS直聘** (boss) - 2026-03-16 实时抓取
 
 ---
 
-## 与主项目的关系
+## 设计原则
 
-本包是从以下项目中提取的独立模块：
-
-| 项目 | 说明 |
-|-----|-----|
-| [resume-dedup](https://github.com/Liman-fully/resume-dedup) | 简历去重工具（使用本规则进行归类） |
-| [resume-toolkit](https://github.com/Liman-fully/resume-toolkit) | 简历整理工具套件 |
-
-本规则包可单独使用，也可作为上述工具的规则来源。
+1. **行业与职能正交**：同一职能可以在多个行业出现（如HR存在于所有行业）
+2. **分类器主逻辑**：先职能（决定文件夹归属），行业作为附加标签（用于筛选/搜索）
+3. **数据来源权威**：基于猎聘官方15个一级行业、22个二级职能分类
+4. **跨平台通用**：JSON格式，支持 Python/Node.js/Java/Go 等任意语言
 
 ---
 
-## License
+## 版本历史
 
-MIT © [Liman](https://github.com/Liman-fully)
+| 版本 | 日期 | 说明 |
+|-----|------|------|
+| 3.0.0 | 2026-03-25 | 升级为三级分类体系（行业×职能×岗位） |
+| 2.0.0 | 2026-03-18 | 二级分类（职能+叠加标签） |
+| 1.0.0 | 2026-03-12 | 初始版本 |
+
+---
+
+## 许可证
+
+MIT License - 详见 [LICENSE](LICENSE)
+
+---
+
+## 贡献
+
+欢迎提交 Issue 和 PR！详见 [docs/RULES_GUIDE.md](docs/RULES_GUIDE.md) 贡献指南。
